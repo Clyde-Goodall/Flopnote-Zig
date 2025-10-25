@@ -1,0 +1,7 @@
+/.zig-global-cache
+src/lib/.zig-global-cache
+
+/zig-out
+.zig-cache
+
+.DS_Store

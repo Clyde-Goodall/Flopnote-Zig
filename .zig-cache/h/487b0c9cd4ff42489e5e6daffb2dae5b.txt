@@ -1,6 +1,0 @@
-0
-133318 88604875 1760895284148195809 52f430a872b4515bf836be62329f9623 1 src/lib/.zig-global-cache/p/raylib-5.6.0-dev-whq8uCg2ywTzCiX3VEP9RuCMXR6_VnDBmkj8GjL_p5QN/src/raylib.h
-21819 88604880 1760895284149046685 5900b07f365e4bc903fa31970773a21e 1 src/lib/.zig-global-cache/p/raylib-5.6.0-dev-whq8uCg2ywTzCiX3VEP9RuCMXR6_VnDBmkj8GjL_p5QN/src/rcamera.h
-83540 88604879 1760895284148870768 9b03e2c9c775fcaa899f158768de2596 1 src/lib/.zig-global-cache/p/raylib-5.6.0-dev-whq8uCg2ywTzCiX3VEP9RuCMXR6_VnDBmkj8GjL_p5QN/src/raymath.h
-251797 88604884 1760895284151047397 feabdc9637e0674c94b6290fbb4588b8 1 src/lib/.zig-global-cache/p/raylib-5.6.0-dev-whq8uCg2ywTzCiX3VEP9RuCMXR6_VnDBmkj8GjL_p5QN/src/rlgl.h
-291068 88603498 1760895281551702323 2ebab2f4e975984c61510e37353cba9e 1 src/lib/.zig-global-cache/p/N-V-__8AALUbbwDKkSH4nbf3Ml_dTWo9qbELvle5i9eQZMuo/src/raygui.h
