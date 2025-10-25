@@ -1,0 +1,25 @@
+const std = @import("std");
+const rl = @import("raylib");
+
+const layer = @import("layer.zig");
+
+pub const Data = struct {
+    const Self = @This();
+    layers: std.array_list.Managed(layer.Data),
+
+    pub fn init(allocator: std.mem.Allocator) !Data {
+        var layers = std.array_list.Managed(layer.Data).init(allocator);
+        layers.append(try layer.Data.init(allocator, layer.MaskType.Solid)) catch unreachable;
+        return Data{
+            .layers = layers,
+        };
+    }
+};
+
+pub fn drawFrame(
+    layers: *std.array_list.Managed(layer.Data),
+    _: rl.Vector2,
+    _: i32,
+) void {
+    for (layers) |_| {}
+}
