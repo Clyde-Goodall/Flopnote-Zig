@@ -17,6 +17,7 @@ pub const MaskType = enum {
 pub const Point = struct {
     x: i32,
     y: i32,
+    value: u1,
     visible: bool,
 };
 
@@ -41,7 +42,7 @@ pub const Data = struct {
         };
     }
 
-    // this should build out the patter for each potential pattern, repeating horizontally and vertically for the entire canvas
+    // this should build out the patter for each potential pattern, 
     fn buildLayerPoints(allocator: std.mem.Allocator, color: ?rl.Color) !std.AutoHashMap(MaskType, PointLayer) {
         const width = @as(usize, @intFromFloat(defaults.Canvas.base_config.width / 5));
         const height = @as(usize, @intFromFloat(defaults.Canvas.base_config.height / 5));
@@ -56,10 +57,10 @@ pub const Data = struct {
                         .x = x % dims,
                         .y = y % dims,
                     };
-
                     try points.append(Point{
-                        .x = @as(i32, @intCast(pattern_loc.x)),
-                        .y = @as(i32, @intCast(pattern_loc.y)),
+                        .x = @as(i32, @intCast(x)),
+                        .y = @as(i32, @intCast(y)),
+                        .value = pattern.getAt(pattern_loc.x, pattern_loc.y),
                         .visible = false,
                     });
                 }
@@ -67,11 +68,9 @@ pub const Data = struct {
             layer_map.put(pattern, PointLayer{
                 .points = points,
                 .mask_type = pattern,
-                .color = color orelse rl.Color.black
+                .color = color orelse rl.Color.black,
             });
         }
         return layer_map;
     }
 };
-
-fn updatePatternLocation(location: *rl.Vector2, pattern: Mask) void {}
