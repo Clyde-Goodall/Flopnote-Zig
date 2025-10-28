@@ -9,7 +9,7 @@ pub const Data = struct {
 
     pub fn init(allocator: std.mem.Allocator) !Data {
         var layers = std.array_list.Managed(layer.Data).init(allocator);
-        layers.append(try layer.Data.init(allocator, layer.MaskType.Solid)) catch unreachable;
+        layers.append(try layer.Data.init(allocator, rl.Color.black)) catch unreachable;
         return Data{
             .layers = layers,
         };

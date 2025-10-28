@@ -9,21 +9,12 @@ const CellRect = struct {
 
     is_active: bool,
     config: defaults.BaseConfig,
-    aspect_dimensions: utils.IntegerRect,
 
     pub fn init(config: defaults.BaseConfig) Self {
         return Self{
             .is_active = false,
             .config = config,
-            .aspect_dimensions = utils.calculateAspectScaleDimensionsRect(config.configStructAsIntegers(), config.ratio),
         };
-    }
-
-    fn updateAspectDimensions(self: *Self) void {
-        self.aspect_dimensions = utils.calculateAspectScaleDimensionsRect(
-            self.config.configStructAsIntegers(),
-            self.config.ratio,
-        );
     }
 };
 
@@ -33,10 +24,17 @@ pub const Component = struct {
     cells: std.array_list.Managed(CellRect),
     active: i32,
     config: defaults.BaseConfig,
+    mouse_in_region: bool,
 
     pub fn init(config: defaults.BaseConfig, allocator: std.mem.Allocator) Self {
         const cells = std.array_list.Managed(CellRect).init(allocator);
-        return Self{ .config = config, .frames = null, .cells = cells, .active = 0 };
+        return Self{
+            .config = config,
+            .frames = null,
+            .cells = cells,
+            .active = 0,
+            .mouse_in_region = false,
+        };
     }
 
     pub fn setFrames(self: *Self, frames: *std.array_list.Managed(frame.Data)) void {
@@ -44,27 +42,29 @@ pub const Component = struct {
     }
 
     fn drawCells(self: *Self) void {
-        const timeline_cfg = defaults.Timeline.base_config;
+        // const timeline_cfg = defaults.Timeline.base_config;
         var i: usize = 0;
         while (i < self.cells.items.len) : (i += 1) {
             const cell = self.cells.items[i];
             const dims = cell.config.configStructAsIntegers();
-            if (cell.config.x + cell.config.padding_x > timeline_cfg.width + timeline_cfg.x) break;
+            const timeline_dims = self.config.configStructAsIntegers();
+            const screen_edge_limit = rl.getScreenWidth() + timeline_dims.x;
+            if (dims.x + dims.padding_x > screen_edge_limit) break;
             // if (cell.x + cell.width  - CELL_PADDING < WINDOW_WIDTH) continue;
             if (self.active == i) {
                 rl.drawRectangle(
                     dims.x + dims.padding_x - 5,
                     dims.y + dims.padding_y - 5,
-                    dims.width - dims.padding_x + 10,
-                    dims.height - dims.padding_y + 10,
+                    dims.width - (dims.padding_x * 2) + 10,
+                    dims.height - (dims.padding_y * 2) + 10,
                     .red,
                 );
             }
             rl.drawRectangle(
                 dims.x + dims.padding_x,
                 dims.y + dims.padding_y,
-                dims.width - dims.padding_x,
-                dims.height - dims.padding_y,
+                dims.width - (dims.padding_x * 2),
+                dims.height - (dims.padding_y * 2),
                 .white,
             );
         }
@@ -73,10 +73,11 @@ pub const Component = struct {
     pub fn draw(self: *Self) void {
         if (self.cells.items.len == 0) return;
         const scaled_dimensions = self.config.configStructAsIntegers();
+        // kinda janky config overrides since I need full-width
         rl.drawRectangle(
             scaled_dimensions.x,
             scaled_dimensions.y,
-            scaled_dimensions.width,
+            rl.getScreenWidth(),
             scaled_dimensions.height,
             .black,
         );
@@ -85,7 +86,12 @@ pub const Component = struct {
 
     pub fn update(self: *Self) !void {
         if (self.frames == null) return;
+        self.updateMouseInRegion();
         self.updateCells() catch unreachable;
+    }
+
+    pub fn updateMouseInRegion(self: *Self) !void {
+        self.mouse_in_region = utils.isMouseInRegion(self.config.configStructAsIntegers());
     }
 
     fn updateCells(self: *Self) !void {
@@ -104,7 +110,6 @@ pub const Component = struct {
             if (scroll_movement != 0) {
                 cell.config.x += (scroll_movement / defaults.Window.base_config.width) * 800;
                 // Only update aspect dimensions when config changes
-                cell.updateAspectDimensions();
             }
             self.updateActiveCell(cell.*, &i);
         }
@@ -119,10 +124,14 @@ pub const Component = struct {
         if (x >= scaled.x + scaled.padding_x and
             x <= scaled.x + scaled.width - scaled.padding_x and
             y >= scaled.y + scaled.padding_y and
-            y <= scaled.y + scaled.height - scaled.padding_y and
-            mouse_clicked)
+            y <= scaled.y + scaled.height - scaled.padding_y)
         {
-            self.active = @as(i32, @intCast(idx.*));
+            rl.setMouseCursor(rl.MouseCursor.pointing_hand);
+            if (mouse_clicked) {
+                self.active = @as(i32, @intCast(idx.*));
+            }
+        } else {
+            rl.setMouseCursor(rl.MouseCursor.arrow);
         }
     }
 
@@ -142,16 +151,18 @@ fn buildCellsFromFrames(
 }
 
 fn buildCellConfig(idx: usize) defaults.BaseConfig {
-    const available_height_pct = defaults.Timeline.base_config.height;
-    const target_padding_y_pct: f32 = 3;
+    const timeline_cfg = defaults.Timeline.base_config;
+    const canvas_cfg = defaults.Canvas.base_config;
+    const available_height_pct = timeline_cfg.height;
+    const target_padding_y_pct: f32 = 2;
     const target_padding_x_pct: f32 = 2;
 
-    const target_height_pct = available_height_pct * 0.6;
-    const target_y_pct = (available_height_pct / 2) - (target_height_pct / 2) - (defaults.Timeline.base_config.padding_y * 2) + defaults.Timeline.base_config.y;
-    const canvas_ratio = defaults.Canvas.base_config.ratio orelse 1;
-    const target_width_pct = (target_height_pct / canvas_ratio) - (2 * target_padding_x_pct);
-
-    const target_x_pct_unclamped = target_padding_x_pct + (target_padding_x_pct + target_width_pct) * @as(f32, @floatFromInt(idx));
+    const target_height_pct = available_height_pct - (target_padding_y_pct * 2);
+    const target_y_pct = timeline_cfg.y + target_padding_y_pct;
+    const canvas_ratio = canvas_cfg.ratio orelse 1;
+    const target_width_pct = target_height_pct / canvas_ratio;
+    // std.debug.print("target_height_pct: {}, canvas_ratio: {}, target_width_pct: {}\n", .{ target_height_pct, canvas_ratio, target_width_pct });
+    const target_x_pct_unclamped = (target_width_pct + target_padding_x_pct) * @as(f32, @floatFromInt(idx)) + target_padding_x_pct;
     const target_x_pct = @min(target_x_pct_unclamped, 2000000.0);
 
     return defaults.BaseConfig{
@@ -164,7 +175,7 @@ fn buildCellConfig(idx: usize) defaults.BaseConfig {
         .max_height = target_height_pct,
         .padding_x = target_padding_x_pct,
         .padding_y = target_padding_y_pct,
-        .ratio = defaults.Canvas.base_config.ratio,
+        .ratio = canvas_cfg.ratio,
         .sticky = true,
         .sticky_anchor = null,
         .scale = false,

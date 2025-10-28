@@ -4,22 +4,22 @@ const tools = @import("../data/tools.zig");
 const layer = @import("../data/layer.zig");
 const patterns = @import("../data/patterns.zig");
 
-pub fn applyTool(tool_type: tools.ToolType, tool_size: tools.ToolSize, layer_data: *layer.Data, pos: rl.Vector2) void {
+pub fn applyTool(tool_type: tools.ToolType, tool_pattern: tools.ToolPattern, tool_size: tools.ToolSize, layer_data: *std.aray_list.Managed(layer.Data), _: rl.Vector2) void {
     switch (tool_type) {
         .Pencil => {
-            pencil(tool_size, layer_data.masks.get(patterns.Patterns.solid));
-            
+            const solid_layer = &layer_data.masks.get(patterns.LayerPatterns.solid);
+            pencil(tool_size, solid_layer);
         },
         .Paint => {
-            paint()
-        }
+            paint(tool_size, tool_pattern);
+        },
     }
 }
 
-fn pencil(tool_size: tools.ToolSize, layer_data: *layer.Data) void{
-    
+fn pencil(_: tools.ToolSize, _: *layer.Data) void {
+    // todo
 }
 
-fn paint(tool_size: tools.ToolSize, layer_data: *layer.Data) void{
-    
+fn paint(_: tools.ToolSize, _: *layer.Data) void {
+    // todo
 }

@@ -19,7 +19,7 @@ pub const Data = struct {
         return Self{
             .allocator = allocator,
             .active_tool = .Pencil,
-            .active_tool_size = .Medium,
+            .active_tool_size = .B,
             .active_project = new_project,
         };
     }

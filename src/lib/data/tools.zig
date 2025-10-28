@@ -1,9 +1,7 @@
 pub const ToolType = enum { Pencil, Fill, Paint, Eraser, Select };
 
-pub const ToolSize = enum { Smallest, Small, Medium, Large, Largest };
-
 // correlates to the available brush options in the selection menu on the DSi
-pub const ToolRow = enum {
+pub const ToolSize = enum {
     A, // single point
     B, // 2x2
     C, // 3x3
@@ -16,8 +14,8 @@ pub const ToolRow = enum {
     J, // 7x7
     K, // 9x9
     L, // pseudo pressure brush 4x4 at its max
-    M, // hollow diamond 7x7 
+    M, // hollow diamond 7x7
     N, // wider light spray
     O, // wider medium spray
-    P, // larger heavy spray    
+    P, // larger heavy spray
 };

@@ -6,6 +6,7 @@ const playback = @import("components/playback.zig");
 const patterns = @import("data/patterns.zig");
 const timeline = @import("components/timeline.zig");
 const tools = @import("components/tools.zig");
+const std = @import("std");
 
 pub const StickyAnchor = enum {
     TopLeft,
@@ -23,6 +24,11 @@ pub const Theme = struct {
     const THEME_ACCENT = .yellow;
     const THEME_TEXT_PRIMARY = .black;
     const THEME_TEXT_SECONDARY = .white;
+};
+
+pub const ScaleMode = enum {
+    window_proportional,
+    aspect_preserving,
 };
 
 pub const IntegerScaledBaseConfig = struct {
@@ -89,10 +95,14 @@ pub const BaseConfig = struct {
         };
     }
 
-    fn multiplyProportionByActualSize(_: *const Self, coord_pair: rl.Vector2,) rl.Vector2 {
+    fn multiplyProportionByActualSize(
+        _: *const Self,
+        coord_pair: rl.Vector2,
+    ) rl.Vector2 {
+        const pixels_per_percent = Window.HEIGHT / 100.0;
         return rl.Vector2{
-            .x = Window.WIDTH * (coord_pair.x / 100.0),
-            .y = Window.HEIGHT * (coord_pair.y / 100.0),
+            .x = pixels_per_percent * coord_pair.x,
+            .y = pixels_per_percent * coord_pair.y,
         };
     }
 };
@@ -167,6 +177,12 @@ pub const Canvas = struct {
     const HEIGHT = 65;
     const MAX_WIDTH = WIDTH;
     const MAX_HEIGHT = HEIGHT;
+    pub const TARGET_PIXEL_WIDTH: i32 = 380;
+    pub const TARGET_PIXEL_HEIGHT: i32 = 252;
+    // technically, those dimensions are scaled to 2x,
+    // so the actual tools are 2x2px rather than 1x1.
+    pub const GRID_POINT_SIZE = 2;
+    pub const SCALE_MULTIPLIER = 1;
 
     pub const base_config = BaseConfig{
         .container_name = "Canvas",
@@ -178,7 +194,7 @@ pub const Canvas = struct {
         .max_height = MAX_HEIGHT,
         .padding_x = 5,
         .padding_y = 5,
-        .ratio = 0.65,
+        .ratio = 0.663,
         .sticky = true,
         .sticky_anchor = StickyAnchor.TopCenter,
         .scale = false,
@@ -237,14 +253,12 @@ pub const Playback = struct {
 
 pub const Timeline = struct {
     const X = 0;
-    const Y = if ((Tools.Y + Tools.HEIGHT) > (Canvas.Y + Canvas.HEIGHT))
-        Tools.Y + Tools.HEIGHT + 5
+    const Y = if ((Tools.Y + Tools.HEIGHT) >= (Canvas.Y + Canvas.HEIGHT))
+        Tools.Y + Tools.HEIGHT + 20
     else
-        Canvas.Y + Canvas.HEIGHT + 5;
+        Canvas.Y + Canvas.HEIGHT + 20;
     const WIDTH = 100;
     const HEIGHT = 100 - Y;
-    const MAX_WIDTH = WIDTH;
-    const MAX_HEIGHT = HEIGHT;
 
     pub const base_config = BaseConfig{
         .container_name = "Playback",
@@ -252,8 +266,8 @@ pub const Timeline = struct {
         .y = Y,
         .width = WIDTH,
         .height = HEIGHT,
-        .max_width = MAX_WIDTH,
-        .max_height = MAX_HEIGHT,
+        .max_width = WIDTH,
+        .max_height = HEIGHT,
         .ratio = null,
         .padding_x = 0,
         .padding_y = 0,

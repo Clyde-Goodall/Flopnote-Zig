@@ -7,6 +7,7 @@ const menu = @import("menu.zig");
 const tools = @import("tools.zig");
 const workspace = @import("../data/workspace.zig");
 const std = @import("std");
+// const yaml_config = @import("../config/config.zig");
 
 pub const ComponentType = enum { Canvas, Menu, Timeline, Playback, Tools };
 
@@ -59,12 +60,17 @@ pub const Root = struct {
 
     components: std.array_list.Managed(TaggedContainer),
     wkspace: workspace.Data,
+    // options: yaml_config.Options,
 
     pub fn init(allocator: std.mem.Allocator) !Self {
         const default_workspace = workspace.Data.init(allocator, null);
         const components = std.array_list.Managed(TaggedContainer).init(allocator);
-
-        var self_root = Self{ .components = components, .wkspace = default_workspace };
+        // const opts = yaml_config.loadOptions(allocator);
+        var self_root = Self{
+            .components = components,
+            .wkspace = default_workspace,
+            // .options = opts,
+        };
 
         const default_active_frame = &self_root.wkspace.active_project.?.frames.items[0];
         const canvas_component = canvas.Component.init(defaults.Canvas.base_config, default_active_frame);
@@ -119,7 +125,13 @@ pub const Root = struct {
 
     pub fn draw(self: *Self) void {
         rl.clearBackground(.black);
-        rl.drawRectangle(0, 0, defaults.Window.base_config.width, defaults.Window.base_config.width, .gray);
+        rl.drawRectangle(
+            0,
+            0,
+            defaults.Window.base_config.width,
+            defaults.Window.base_config.width,
+            .gray,
+        );
         rl.beginDrawing();
         defer rl.endDrawing();
         for (self.components.items) |*component| {
