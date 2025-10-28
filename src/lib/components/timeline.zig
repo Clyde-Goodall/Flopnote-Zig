@@ -42,7 +42,6 @@ pub const Component = struct {
     }
 
     fn drawCells(self: *Self) void {
-        // const timeline_cfg = defaults.Timeline.base_config;
         var i: usize = 0;
         while (i < self.cells.items.len) : (i += 1) {
             const cell = self.cells.items[i];
@@ -53,18 +52,18 @@ pub const Component = struct {
             // if (cell.x + cell.width  - CELL_PADDING < WINDOW_WIDTH) continue;
             if (self.active == i) {
                 rl.drawRectangle(
-                    dims.x + dims.padding_x - 5,
-                    dims.y + dims.padding_y - 5,
-                    dims.width - (dims.padding_x * 2) + 10,
-                    dims.height - (dims.padding_y * 2) + 10,
+                    dims.x - 5,
+                    dims.y - 5,
+                    dims.width + 10,
+                    dims.height + 10,
                     .red,
                 );
             }
             rl.drawRectangle(
-                dims.x + dims.padding_x,
-                dims.y + dims.padding_y,
-                dims.width - (dims.padding_x * 2),
-                dims.height - (dims.padding_y * 2),
+                dims.x,
+                dims.y,
+                dims.width,
+                dims.height,
                 .white,
             );
         }
@@ -86,12 +85,12 @@ pub const Component = struct {
 
     pub fn update(self: *Self) !void {
         if (self.frames == null) return;
-        self.updateMouseInRegion();
+        try self.updateMouseInRegion();
         self.updateCells() catch unreachable;
     }
 
     pub fn updateMouseInRegion(self: *Self) !void {
-        self.mouse_in_region = utils.isMouseInRegion(self.config.configStructAsIntegers());
+        self.mouse_in_region = utils.isMouseInRegion(&self.config.configStructAsIntegers(), true, null);
     }
 
     fn updateCells(self: *Self) !void {
@@ -107,31 +106,19 @@ pub const Component = struct {
         var i: usize = 0;
         while (i < self.cells.items.len) : (i += 1) {
             var cell = &self.cells.items[i];
+            const is_hovered = utils.isMouseInRegion(&cell.config.configStructAsIntegers(), null, null);
+            if (is_hovered) {
+                rl.setMouseCursor(rl.MouseCursor.pointing_hand);
+                const mouse_clicked = rl.isMouseButtonPressed(rl.MouseButton.left);
+                if (mouse_clicked) {
+                    self.active = @as(i32, @intCast(i));
+                }
+            } else {
+                rl.setMouseCursor(rl.MouseCursor.arrow);
+            }
             if (scroll_movement != 0) {
                 cell.config.x += (scroll_movement / defaults.Window.base_config.width) * 800;
-                // Only update aspect dimensions when config changes
             }
-            self.updateActiveCell(cell.*, &i);
-        }
-    }
-
-    fn updateActiveCell(self: *Self, cell: CellRect, idx: *const usize) void {
-        const mouse_pos = rl.getMousePosition();
-        const mouse_clicked = rl.isMouseButtonPressed(rl.MouseButton.left);
-        const x = @as(i32, @intFromFloat(mouse_pos.x));
-        const y = @as(i32, @intFromFloat(mouse_pos.y));
-        const scaled = cell.config.configStructAsIntegers();
-        if (x >= scaled.x + scaled.padding_x and
-            x <= scaled.x + scaled.width - scaled.padding_x and
-            y >= scaled.y + scaled.padding_y and
-            y <= scaled.y + scaled.height - scaled.padding_y)
-        {
-            rl.setMouseCursor(rl.MouseCursor.pointing_hand);
-            if (mouse_clicked) {
-                self.active = @as(i32, @intCast(idx.*));
-            }
-        } else {
-            rl.setMouseCursor(rl.MouseCursor.arrow);
         }
     }
 
@@ -154,19 +141,19 @@ fn buildCellConfig(idx: usize) defaults.BaseConfig {
     const timeline_cfg = defaults.Timeline.base_config;
     const canvas_cfg = defaults.Canvas.base_config;
     const available_height_pct = timeline_cfg.height;
-    const target_padding_y_pct: f32 = 2;
+    const target_padding_y_pct: f32 = 4;
     const target_padding_x_pct: f32 = 2;
 
     const target_height_pct = available_height_pct - (target_padding_y_pct * 2);
     const target_y_pct = timeline_cfg.y + target_padding_y_pct;
     const canvas_ratio = canvas_cfg.ratio orelse 1;
     const target_width_pct = target_height_pct / canvas_ratio;
-    // std.debug.print("target_height_pct: {}, canvas_ratio: {}, target_width_pct: {}\n", .{ target_height_pct, canvas_ratio, target_width_pct });
     const target_x_pct_unclamped = (target_width_pct + target_padding_x_pct) * @as(f32, @floatFromInt(idx)) + target_padding_x_pct;
     const target_x_pct = @min(target_x_pct_unclamped, 2000000.0);
 
     return defaults.BaseConfig{
         .container_name = "CellRect",
+        .maintain_aspect = true,
         .x = target_x_pct,
         .y = target_y_pct,
         .width = target_width_pct,

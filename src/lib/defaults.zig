@@ -50,6 +50,7 @@ pub const BaseConfig = struct {
     const Self = @This();
 
     container_name: []const u8,
+    maintain_aspect: ?bool,
     x: f32, // Should be an integer beteen 0-100, 1 being 1%, 50 being 50%, etc
     y: f32,
     width: f32,
@@ -96,14 +97,21 @@ pub const BaseConfig = struct {
     }
 
     fn multiplyProportionByActualSize(
-        _: *const Self,
+        self: *const Self,
         coord_pair: rl.Vector2,
     ) rl.Vector2 {
-        const pixels_per_percent = Window.HEIGHT / 100.0;
-        return rl.Vector2{
-            .x = pixels_per_percent * coord_pair.x,
-            .y = pixels_per_percent * coord_pair.y,
-        };
+        // const pixels_per_percent = Window.HEIGHT / 100.0;
+        if (self.maintain_aspect orelse false) {
+            return rl.Vector2{
+                .x = Window.HEIGHT * coord_pair.x / 100,
+                .y = Window.HEIGHT * coord_pair.y / 100,
+            };
+        } else {
+            return rl.Vector2{
+                .x = Window.WIDTH * coord_pair.x / 100,
+                .y = Window.HEIGHT * coord_pair.y / 100,
+            };
+        }
     }
 };
 
@@ -112,14 +120,15 @@ pub const BaseConfig = struct {
 // is really only for metadata concerning the window itself
 pub const Window = struct {
     const WIDTH = 1000;
-    const HEIGHT = 800;
+    const HEIGHT = 600;
 
     pub const base_config = BaseConfig{
         .container_name = "Window",
+        .maintain_aspect = true,
         .x = 0,
         .y = 0,
-        .width = 1000,
-        .height = 800,
+        .width = WIDTH,
+        .height = HEIGHT,
         .max_width = WIDTH,
         .max_height = HEIGHT,
         .padding_x = 0,
@@ -145,7 +154,7 @@ pub const Tools = struct {
     const X = 0;
     const Y = 0;
     const WIDTH = 20;
-    const HEIGHT = 65;
+    const HEIGHT = 80;
     const MAX_WIDTH = WIDTH;
     const MAX_HEIGHT = HEIGHT;
     const SELECTED_TOOL = tools.ToolType.Pencil;
@@ -153,6 +162,7 @@ pub const Tools = struct {
 
     pub const base_config = BaseConfig{
         .container_name = "Tools",
+        .maintain_aspect = false,
         .x = X,
         .y = Y,
         .width = WIDTH,
@@ -174,18 +184,19 @@ pub const Canvas = struct {
     const X = Tools.X + Tools.WIDTH;
     const Y = 0;
     const WIDTH = 80;
-    const HEIGHT = 65;
+    const HEIGHT = 80;
     const MAX_WIDTH = WIDTH;
     const MAX_HEIGHT = HEIGHT;
-    pub const TARGET_PIXEL_WIDTH: i32 = 380;
-    pub const TARGET_PIXEL_HEIGHT: i32 = 252;
+    pub const TARGET_PIXEL_WIDTH: i32 = 190;
+    pub const TARGET_PIXEL_HEIGHT: i32 = 126;
     // technically, those dimensions are scaled to 2x,
     // so the actual tools are 2x2px rather than 1x1.
     pub const GRID_POINT_SIZE = 2;
-    pub const SCALE_MULTIPLIER = 1;
+    pub const SCALE_MULTIPLIER = 2;
 
     pub const base_config = BaseConfig{
         .container_name = "Canvas",
+        .maintain_aspect = false,
         .x = X,
         .y = Y,
         .width = WIDTH,
@@ -213,6 +224,7 @@ pub const Collaborators = struct {
 
     pub const base_config = BaseConfig{
         .container_name = "Collaborators",
+        .maintain_aspect = false,
         .x = X,
         .y = Y,
         .width = WIDTH,
@@ -238,6 +250,7 @@ pub const Playback = struct {
 
     pub const base_config = BaseConfig{
         .container_name = "Playback",
+        .maintain_aspect = false,
         .x = X,
         .y = Y,
         .width = WIDTH,
@@ -254,14 +267,15 @@ pub const Playback = struct {
 pub const Timeline = struct {
     const X = 0;
     const Y = if ((Tools.Y + Tools.HEIGHT) >= (Canvas.Y + Canvas.HEIGHT))
-        Tools.Y + Tools.HEIGHT + 20
+        Tools.Y + Tools.HEIGHT
     else
-        Canvas.Y + Canvas.HEIGHT + 20;
+        Canvas.Y + Canvas.HEIGHT;
     const WIDTH = 100;
     const HEIGHT = 100 - Y;
 
     pub const base_config = BaseConfig{
         .container_name = "Playback",
+        .maintain_aspect = true,
         .x = X,
         .y = Y,
         .width = WIDTH,

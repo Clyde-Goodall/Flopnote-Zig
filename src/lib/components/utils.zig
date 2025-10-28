@@ -74,15 +74,30 @@ pub fn aspectRatioScaledDimensions(base_rect: rl.Rectangle, target_ratio: f32) r
     };
 }
 
+pub fn isMouseInRegion(region: *const defaults.IntegerScaledBaseConfig, full_width: ?bool, full_height: ?bool) bool {
+    const is_full_width = full_width orelse false;
+    const is_full_height = full_height orelse false;
 
-pub fn isMouseInRegion(region: *utils.IntegerRect) bool {
+    const width = if (is_full_width)
+        rl.getScreenWidth()
+    else
+        region.x + region.width;
+
+    const height = if (is_full_height)
+        rl.getScreenHeight()
+    else
+        region.y + region.width;
+
     const mouse = rl.getMousePosition();
-    if (mouse.x >= region.x and
-        mouse.x <= rl.getScreenWidth() and
-        mouse.y >= region.y and
-        mouse.y <= region.y + region.height)
+    const mx = @as(i32, @intFromFloat(mouse.x));
+    const my = @as(i32, @intFromFloat(mouse.y));
+
+    if (mx >= region.x and
+        mx <= width and
+        my >= region.y and
+        my <= height)
     {
         return true;
-    } 
+    }
     return false;
 }
