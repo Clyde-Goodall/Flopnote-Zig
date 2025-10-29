@@ -16,7 +16,7 @@ pub const Data = struct {
         var frames = std.array_list.Managed(frame.Data).init(allocator);
         frames.append(try frame.Data.init(allocator)) catch unreachable;
         frames.append(try frame.Data.init(allocator)) catch unreachable;
-
+        frames.items[frames.items.len - 1].active = true;
         return Self{
             .allocator = allocator,
             .project_name = project_name_unwrapped,
@@ -25,6 +25,16 @@ pub const Data = struct {
             .date_updated = 1,
             .playback_speed = 4,
         };
+    }
+    
+    pub fn changePlaybackSpeed(self: *Self, speed: i8) void{
+        self.playback_speed = speed;
+    }
+
+    pub fn getActiveFrame(self: *Self) *frame.Data {
+        for (self.frames.items) |*frame_data| {
+            if (frame.active) return frame_data;
+        }
     }
 
     pub fn appendNewFrame(self: *Self) void {

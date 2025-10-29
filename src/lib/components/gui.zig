@@ -7,9 +7,10 @@ const menu = @import("menu.zig");
 const tools = @import("tools.zig");
 const workspace = @import("../data/workspace.zig");
 const std = @import("std");
+const speed_control = @import("speed_control.zig");
 // const yaml_config = @import("../config/config.zig");
 
-pub const ComponentType = enum { Canvas, Menu, Timeline, Playback, Tools };
+pub const ComponentType = enum { Canvas, Menu, Timeline, Playback, Tools, SpeedControl };
 
 pub const Container = struct {
     const Self = @This();
@@ -37,6 +38,7 @@ pub const TaggedContainer = struct {
         Timeline: timeline.Component,
         Playback: playback.Component,
         Tools: tools.Component,
+        SpeedControl: speed_control.Component,
     };
 
     pub fn draw(self: *TaggedContainer) void {
@@ -73,21 +75,26 @@ pub const Root = struct {
         };
 
         const default_active_frame = &self_root.wkspace.active_project.?.frames.items[0];
-        const canvas_component = canvas.Component.init(defaults.Canvas.base_config, default_active_frame);
-        const timeline_component = timeline.Component.init(defaults.Timeline.base_config, allocator);
-        const tools_component = tools.Component.init(defaults.Tools.base_config);
+        const canvas_component = canvas.Component.init(default_active_frame);
+        const timeline_component = timeline.Component.init(allocator);
+        const tools_component = tools.Component.init(&default_workspace);
+        const speed_control_component = speed_control.Component.init(&default_workspace);
 
         const component_slice = &[_]TaggedContainer{
+            TaggedContainer{
+                .component = .{ .Tools = tools_component },
+                .child = null,
+            },
             TaggedContainer{
                 .component = .{ .Canvas = canvas_component },
                 .child = null,
             },
             TaggedContainer{
-                .component = .{ .Timeline = timeline_component },
+                .component = .{ .SpeedControl = speed_control_component },
                 .child = null,
             },
             TaggedContainer{
-                .component = .{ .Tools = tools_component },
+                .component = .{ .Timeline = timeline_component },
                 .child = null,
             },
         };
@@ -99,7 +106,7 @@ pub const Root = struct {
 
     pub fn initPointers(self: *Self) void {
         // Set all pointers AFTER the struct is in its final memory location
-        self.components.items[1].component.Timeline.setFrames(&self.wkspace.active_project.?.frames);
+        self.components.items[3].component.Timeline.setFrames(&self.wkspace.active_project.?.frames);
     }
 
     pub fn start(self: *Self) void {

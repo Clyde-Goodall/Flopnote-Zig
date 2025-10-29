@@ -16,14 +16,27 @@ pub const StickyAnchor = enum {
     BottomRight,
     BottomCenter,
     Center,
+    None,
 };
 
 pub const Theme = struct {
-    const THEME_PRIMARY = .white;
-    const THEME_SECONDARY = .orange;
-    const THEME_ACCENT = .yellow;
-    const THEME_TEXT_PRIMARY = .black;
-    const THEME_TEXT_SECONDARY = .white;
+    PRIMARY: rl.Color,
+    SECONDARY: rl.Color,
+    ACCENT: rl.Color,
+    TEXT_PRIMARY: rl.Color,
+    TEXT_SECONDARY: rl.Color,
+    HIGHLIGHT: rl.Color,
+
+    pub fn init() Theme {
+        return .{
+            .PRIMARY = .white,
+            .SECONDARY = .orange,
+            .ACCENT = .yellow,
+            .TEXT_PRIMARY = .black,
+            .TEXT_SECONDARY = .white,
+            .HIGHLIGHT = rl.Color.fromInt(0xFB6100FF),
+        };
+    }
 };
 
 pub const ScaleMode = enum {
@@ -192,7 +205,7 @@ pub const Canvas = struct {
     // technically, those dimensions are scaled to 2x,
     // so the actual tools are 2x2px rather than 1x1.
     pub const GRID_POINT_SIZE = 2;
-    pub const SCALE_MULTIPLIER = 2;
+    pub const SCALE_MULTIPLIER = 3;
 
     pub const base_config = BaseConfig{
         .container_name = "Canvas",
@@ -261,6 +274,33 @@ pub const Playback = struct {
         .sticky_anchor = StickyAnchor.BottomCenter,
         .scale = false,
         .resizeable = false,
+    };
+};
+
+pub const SpeedControl = struct {
+    const PADDING_X = 2;
+    const PADDING_Y = 2;
+    const HEIGHT = 5;
+    const WIDTH = 25;
+    const X = Tools.base_config.x + Tools.base_config.width + Tools.base_config.padding_x + PADDING_X;
+    const Y = Tools.base_config.y + Tools.base_config.height - HEIGHT - PADDING_Y;
+    pub const base_config = BaseConfig{
+        .container_name = "SpeedControl",
+        .maintain_aspect = true,
+        .x = X,
+        .y = Y,
+        .width = WIDTH,
+        .height = HEIGHT,
+        .max_width = WIDTH,
+        .max_height = HEIGHT,
+        .ratio = null,
+        .padding_x = PADDING_X,
+        .padding_y = PADDING_Y,
+        .sticky = true,
+        .sticky_anchor = StickyAnchor.None,
+        .scale = false,
+        .resizeable = true,
+        .border_radius = 0,
     };
 };
 

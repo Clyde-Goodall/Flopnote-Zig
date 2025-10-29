@@ -18,23 +18,36 @@ const CellRect = struct {
     }
 };
 
+pub const TimelineView = enum {
+    Cells,
+    Layers,
+};
+
 pub const Component = struct {
     const Self = @This();
     frames: ?*std.array_list.Managed(frame.Data),
     cells: std.array_list.Managed(CellRect),
-    active: i32,
+    prev_active: usize,
+    current_active: usize,
     config: defaults.BaseConfig,
     mouse_in_region: bool,
+    theme_data: defaults.Theme,
 
-    pub fn init(config: defaults.BaseConfig, allocator: std.mem.Allocator) Self {
+    pub fn init(allocator: std.mem.Allocator) Self {
         const cells = std.array_list.Managed(CellRect).init(allocator);
         return Self{
-            .config = config,
+            .config = defaults.Timeline.base_config,
             .frames = null,
             .cells = cells,
-            .active = 0,
+            .current_active = 0,
+            .prev_active = 0,
             .mouse_in_region = false,
+            .theme_data = defaults.Theme.init(),
         };
+    }
+
+    pub fn deinit(self: *Self) void {
+        self.cells.deinit();
     }
 
     pub fn setFrames(self: *Self, frames: *std.array_list.Managed(frame.Data)) void {
@@ -45,18 +58,19 @@ pub const Component = struct {
         var i: usize = 0;
         while (i < self.cells.items.len) : (i += 1) {
             const cell = self.cells.items[i];
-            const dims = cell.config.configStructAsIntegers();
+            var dims = cell.config.configStructAsIntegers();
+            dims.x = dims.x + dims.padding_x;
             const timeline_dims = self.config.configStructAsIntegers();
             const screen_edge_limit = rl.getScreenWidth() + timeline_dims.x;
             if (dims.x + dims.padding_x > screen_edge_limit) break;
             // if (cell.x + cell.width  - CELL_PADDING < WINDOW_WIDTH) continue;
-            if (self.active == i) {
+            if (self.current_active == i) {
                 rl.drawRectangle(
                     dims.x - 5,
                     dims.y - 5,
                     dims.width + 10,
                     dims.height + 10,
-                    .red,
+                    self.theme_data.HIGHLIGHT,
                 );
             }
             rl.drawRectangle(
@@ -64,7 +78,7 @@ pub const Component = struct {
                 dims.y,
                 dims.width,
                 dims.height,
-                .white,
+                self.theme_data.PRIMARY,
             );
         }
     }
@@ -95,7 +109,6 @@ pub const Component = struct {
 
     fn updateCells(self: *Self) !void {
         const scroll_movement = rl.getMouseWheelMove();
-
         const frames = self.frames orelse return;
 
         // Ensure cells match frames count
@@ -108,20 +121,23 @@ pub const Component = struct {
             var cell = &self.cells.items[i];
             const is_hovered = utils.isMouseInRegion(&cell.config.configStructAsIntegers(), null, null);
             if (is_hovered) {
-                rl.setMouseCursor(rl.MouseCursor.pointing_hand);
                 const mouse_clicked = rl.isMouseButtonPressed(rl.MouseButton.left);
                 if (mouse_clicked) {
-                    self.active = @as(i32, @intCast(i));
+                    self.swapActiveFrameInFrameArray(i);
                 }
-            } else {
-                rl.setMouseCursor(rl.MouseCursor.arrow);
             }
             if (scroll_movement != 0) {
                 cell.config.x += (scroll_movement / defaults.Window.base_config.width) * 800;
             }
         }
     }
-
+    pub fn swapActiveFrameInFrameArray(self: *Self, idx: usize) void {
+        self.prev_active = self.current_active;
+        self.current_active = idx;
+        self.frames.?.*.items[self.prev_active].active = false; // lol
+        self.frames.?.*.items[self.current_active].active = true;
+        std.debug.print("\nSet {} as active frame\n", .{idx});
+    }
     pub fn addNewFrameAndCell(self: *Self) void {
         self.frames.append(frame.Data.init());
         self.cells.append(CellRect.init());

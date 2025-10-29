@@ -13,9 +13,9 @@ pub const Component = struct {
     config: defaults.BaseConfig,
     drawable_region: ?utils.IntegerRect,
 
-    pub fn init(base_config: defaults.BaseConfig, open_frame: ?*frame.Data) Component {
+    pub fn init(open_frame: ?*frame.Data) Component {
         var component = Component{
-            .config = base_config,
+            .config = defaults.Canvas.base_config,
             .open_frame = open_frame orelse null,
             .drawable_region = null,
         };

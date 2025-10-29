@@ -1,7 +1,7 @@
 pub const ToolType = enum { Pencil, Fill, Paint, Eraser, Select };
 
 // correlates to the available brush options in the selection menu on the DSi
-pub const ToolSize = enum {
+pub const ToolPatternType = enum {
     A, // single point
     B, // 2x2
     C, // 3x3
@@ -19,3 +19,8 @@ pub const ToolSize = enum {
     O, // wider medium spray
     P, // larger heavy spray
 };
+
+pub const ToolSize = enum { Base, Thick };
+
+// TODO: build out helper function to scale
+// pencil/brush 2D slices to the same scale as the canvas
