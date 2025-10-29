@@ -163,7 +163,7 @@ pub const CanvasColors = enum(rl.Color) {
 };
 
 pub const Tools = struct {
-    const STARTING_FRAME_SPEED = 10;
+    const STARTING_FRAME_SPEED = 3;
     const X = 0;
     const Y = 0;
     const WIDTH = 20;
@@ -278,15 +278,16 @@ pub const Playback = struct {
 };
 
 pub const SpeedControl = struct {
-    const PADDING_X = 2;
-    const PADDING_Y = 2;
+    const PADDING_X = 1;
+    const PADDING_Y = 1.5;
     const HEIGHT = 5;
     const WIDTH = 25;
-    const X = Tools.base_config.x + Tools.base_config.width + Tools.base_config.padding_x + PADDING_X;
+    const X = Tools.base_config.x + Tools.base_config.width + PADDING_X;
     const Y = Tools.base_config.y + Tools.base_config.height - HEIGHT - PADDING_Y;
+
     pub const base_config = BaseConfig{
         .container_name = "SpeedControl",
-        .maintain_aspect = true,
+        .maintain_aspect = false,
         .x = X,
         .y = Y,
         .width = WIDTH,

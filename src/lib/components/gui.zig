@@ -136,7 +136,7 @@ pub const Root = struct {
             0,
             0,
             defaults.Window.base_config.width,
-            defaults.Window.base_config.width,
+            defaults.Window.base_config.height,
             .gray,
         );
         rl.beginDrawing();
