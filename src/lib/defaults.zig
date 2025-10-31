@@ -26,6 +26,9 @@ pub const Theme = struct {
     TEXT_PRIMARY: rl.Color,
     TEXT_SECONDARY: rl.Color,
     HIGHLIGHT: rl.Color,
+    HIGHLIGHT_SECONDARY: rl.Color,
+    HIGHLIGHT_UNSELECTED: rl.Color,
+    DISABLED: rl.Color,
 
     pub fn init() Theme {
         return .{
@@ -35,6 +38,9 @@ pub const Theme = struct {
             .TEXT_PRIMARY = .black,
             .TEXT_SECONDARY = .white,
             .HIGHLIGHT = rl.Color.fromInt(0xFB6100FF),
+            .HIGHLIGHT_SECONDARY = rl.Color.fromInt(0xFFC87AFF),
+            .HIGHLIGHT_UNSELECTED = rl.Color.fromInt(0xF99D50FF),
+            .DISABLED = rl.Color.gray,
         };
     }
 };
@@ -281,7 +287,7 @@ pub const SpeedControl = struct {
     const PADDING_X = 1;
     const PADDING_Y = 1.5;
     const HEIGHT = 5;
-    const WIDTH = 25;
+    const WIDTH = 20;
     const X = Tools.base_config.x + Tools.base_config.width + PADDING_X;
     const Y = Tools.base_config.y + Tools.base_config.height - HEIGHT - PADDING_Y;
 

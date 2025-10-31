@@ -43,7 +43,11 @@ pub const TaggedContainer = struct {
 
     pub fn draw(self: *TaggedContainer) void {
         switch (self.component) {
-            inline else => |*component| component.draw(),
+            inline else => |*component| {
+                component.draw() catch |err| {
+                    std.debug.print("\n{}", .{err});
+                };
+            },
         }
         if (self.child) |child| {
             child.draw();

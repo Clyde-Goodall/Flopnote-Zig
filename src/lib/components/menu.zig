@@ -11,7 +11,7 @@ pub const Component = struct {
         return Component{};
     }
     
-    pub fn draw(self: *Self) void {
+    pub fn draw(self: *Self) !void {
         const scaled_dimensions = self.config.configStructAsIntegers();
         const padded_width = scaled_dimensions.width - scaled_dimensions.padding_x;
         const padded_height = scaled_dimensions.height - scaled_dimensions.padding_y;

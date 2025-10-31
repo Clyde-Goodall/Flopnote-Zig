@@ -27,7 +27,7 @@ pub const Component = struct {
         return;
     }
 
-    pub fn draw(self: *Self) void {
+    pub fn draw(self: *Self) !void {
         if (self.drawable_region) |region| {
             // const canvas_container = self.config.configStructAsIntegers();
             // rl.drawRectangle(canvas_container.x, canvas_container.y, canvas_container.width, canvas_container.height, .gray);

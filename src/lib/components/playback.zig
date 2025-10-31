@@ -15,7 +15,7 @@ pub const Component = struct {
         };
     }
 
-    pub fn draw(self: *Self) void {
+    pub fn draw(self: *Self) !void {
         const scaled_dimensions = self.config.configStructAsIntegers();
         rl.drawRectangle(scaled_dimensions.x, scaled_dimensions.y, scaled_dimensions.width, scaled_dimensions.height, .white);
     }

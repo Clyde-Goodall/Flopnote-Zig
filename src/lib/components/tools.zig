@@ -17,7 +17,7 @@ pub const Component = struct {
         };
     }
 
-    pub fn draw(self: *Self) void {
+    pub fn draw(self: *Self) !void {
         const padded = self.config.configStructAsIntegers();
         rl.drawRectangle(
             padded.x,

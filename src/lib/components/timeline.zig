@@ -83,7 +83,7 @@ pub const Component = struct {
         }
     }
 
-    pub fn draw(self: *Self) void {
+    pub fn draw(self: *Self) !void {
         if (self.cells.items.len == 0) return;
         const scaled_dimensions = self.config.configStructAsIntegers();
         // kinda janky config overrides since I need full-width
@@ -108,7 +108,6 @@ pub const Component = struct {
     }
 
     fn updateCells(self: *Self) !void {
-        const scroll_movement = rl.getMouseWheelMove();
         const frames = self.frames orelse return;
 
         // Ensure cells match frames count
@@ -116,6 +115,8 @@ pub const Component = struct {
             try self.cells.append(CellRect.init(buildCellConfig(self.cells.items.len)));
         }
 
+        if (!self.mouse_in_region) return;
+        const scroll_movement = rl.getMouseWheelMove();
         var i: usize = 0;
         while (i < self.cells.items.len) : (i += 1) {
             var cell = &self.cells.items[i];
