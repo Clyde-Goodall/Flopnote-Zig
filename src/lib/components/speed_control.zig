@@ -64,10 +64,15 @@ pub const Component = struct {
     // }
 
     fn drawSpeedText(self: *Self) !void { // this will only ever show between 1 and 8, inclusive
-        const cfg = defaults.SpeedControl.base_config.configStructAsIntegers();
+        std.debug.print("drawSpeedText called\n", .{});
+        if (self.wkspace.*.active_project == null) {
+            std.debug.print("active_project is null!\n", .{});
+            return;
+        }
+        const cfg = self.config.configStructAsIntegers();
         var buf: [6]u8 = undefined;
-        std.debug.print("\n{}", .{self.wkspace.*.playback_speed});
-        const text = try std.fmt.bufPrintZ(&buf, "{}", .{self.wkspace.*.playback_speed});
+        std.debug.print("playback speed: {}\n", .{self.wkspace.*.active_project.?.playback_speed});
+        const text = try std.fmt.bufPrintZ(&buf, "{}", .{self.wkspace.*.active_project.?.playback_speed});
         const anchor_x = cfg.x + 10;
         const anchor_y = cfg.y + 5;
         rl.drawText(text, anchor_x, anchor_y, 22, self.theme_data.HIGHLIGHT_SECONDARY);

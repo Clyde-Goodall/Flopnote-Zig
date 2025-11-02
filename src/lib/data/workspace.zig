@@ -14,7 +14,7 @@ pub const Data = struct {
     playback_speed: i8,
 
     pub fn init(allocator: std.mem.Allocator, new_project_name: ?[]const u8) Self {
-        const new_project = project.Data.init(allocator, new_project_name orelse "Untitle Project") catch @panic("Could not initialize new project");
+        const new_project = project.Data.init(allocator, new_project_name orelse "Untitled Project") catch @panic("Could not initialize new project");
         return Self{
             .allocator = allocator,
             .active_tool = .Pencil,

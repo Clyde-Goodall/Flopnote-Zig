@@ -18,12 +18,19 @@ pub const Component = struct {
     }
 
     pub fn draw(self: *Self) !void {
-        const padded = self.config.configStructAsIntegers();
+        const dims = self.config.configStructAsIntegers();
         rl.drawRectangle(
-            padded.x,
-            padded.y,
-            padded.width,
-            padded.height,
+            dims.x + dims.padding_x - 1,
+            dims.y + dims.padding_y - 1,
+            dims.width - (dims.padding_x * 2) + 2,
+            dims.height - (dims.padding_y * 2) + 2,
+            self.theme_data.HIGHLIGHT_SECONDARY,
+        );
+        rl.drawRectangle(
+            dims.x + dims.padding_x,
+            dims.y + dims.padding_y,
+            dims.width - (dims.padding_x * 2),
+            dims.height - (dims.padding_y * 2),
             self.theme_data.PRIMARY,
         );
     }

@@ -81,8 +81,8 @@ pub const Root = struct {
         const default_active_frame = &self_root.wkspace.active_project.?.frames.items[0];
         const canvas_component = canvas.Component.init(default_active_frame);
         const timeline_component = timeline.Component.init(allocator);
-        const tools_component = tools.Component.init(&default_workspace);
-        const speed_control_component = speed_control.Component.init(&default_workspace);
+        const tools_component = tools.Component.init(&self_root.wkspace);
+        const speed_control_component = speed_control.Component.init(&self_root.wkspace);
 
         const component_slice = &[_]TaggedContainer{
             TaggedContainer{
@@ -109,7 +109,8 @@ pub const Root = struct {
     }
 
     pub fn initPointers(self: *Self) void {
-        // Set all pointers AFTER the struct is in its final memory location
+        self.components.items[0].component.Tools.wkspace = &self.wkspace;
+        self.components.items[2].component.SpeedControl.wkspace = &self.wkspace;
         self.components.items[3].component.Timeline.setFrames(&self.wkspace.active_project.?.frames);
     }
 
@@ -135,16 +136,10 @@ pub const Root = struct {
     }
 
     pub fn draw(self: *Self) void {
-        rl.clearBackground(.black);
-        rl.drawRectangle(
-            0,
-            0,
-            defaults.Window.base_config.width,
-            defaults.Window.base_config.height,
-            .gray,
-        );
         rl.beginDrawing();
         defer rl.endDrawing();
+        rl.clearBackground(.light_gray);
+        drawBackgroundGrid();
         for (self.components.items) |*component| {
             component.draw();
         }
@@ -154,3 +149,19 @@ pub const Root = struct {
         defer self.components.deinit();
     }
 };
+
+fn drawBackgroundGrid() void {
+    const grid_square_size = 20;
+    const width = defaults.Window.base_config.width;
+    const height = defaults.Window.base_config.height;
+    var c: i32 = 0;
+    while (c < width) : (c += grid_square_size) {
+        const col_int = @as(i32, @intCast(c));
+        rl.drawLine(col_int, 0, col_int, height, rl.Color.dark_gray);
+    }
+    var r: i32 = 0;
+    while (r < height) : (r += grid_square_size) {
+        const row_int = @as(i32, @intCast(r));
+        rl.drawLine(0, row_int, width, row_int, rl.Color.dark_gray);
+    }
+}

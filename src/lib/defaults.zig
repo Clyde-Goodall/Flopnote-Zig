@@ -138,8 +138,8 @@ pub const BaseConfig = struct {
 // kinda redundant having the baseconfig since this struct is
 // is really only for metadata concerning the window itself
 pub const Window = struct {
-    const WIDTH = 1000;
-    const HEIGHT = 600;
+    pub const WIDTH = 1000;
+    pub const HEIGHT = 600;
 
     pub const base_config = BaseConfig{
         .container_name = "Window",
@@ -188,8 +188,8 @@ pub const Tools = struct {
         .height = HEIGHT,
         .max_width = MAX_WIDTH,
         .max_height = MAX_HEIGHT,
-        .padding_x = 2,
-        .padding_y = 2,
+        .padding_x = 1,
+        .padding_y = 1.5,
         .ratio = null,
         .sticky = false,
         .scale = false,
