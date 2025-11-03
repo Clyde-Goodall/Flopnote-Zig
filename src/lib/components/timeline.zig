@@ -3,6 +3,7 @@ const frame = @import("../data/frame.zig");
 const rl = @import("raylib");
 const defaults = @import("../defaults.zig");
 const utils = @import("utils.zig");
+const theme_data = defaults.Theme;
 
 const CellRect = struct {
     const Self = @This();
@@ -31,23 +32,31 @@ pub const Component = struct {
     current_active: usize,
     config: defaults.BaseConfig,
     mouse_in_region: bool,
-    theme_data: defaults.Theme,
+    maximum_visible_cells: i32,
 
     pub fn init(allocator: std.mem.Allocator) Self {
         const cells = std.array_list.Managed(CellRect).init(allocator);
-        return Self{
+        const self_root = Self{
             .config = defaults.Timeline.base_config,
             .frames = null,
             .cells = cells,
             .current_active = 0,
             .prev_active = 0,
             .mouse_in_region = false,
-            .theme_data = defaults.Theme.init(),
+            .maximum_visible_cells = 0,
         };
+        self_root.calculateMaximumVisibleCells();
+        return self_root;
     }
 
     pub fn deinit(self: *Self) void {
         self.cells.deinit();
+    }
+
+    pub fn calculateMaximumVisibleCells(self: *Self) void {
+        const cell_dims = self.cells.items[0].config.configStructAsIntegers();
+        const component_dims = self.config.configStructAsIntegers();
+        const max = @floor(component_dims.width / (cell_dims.width + cell_dims.padding_x));
     }
 
     pub fn setFrames(self: *Self, frames: *std.array_list.Managed(frame.Data)) void {
@@ -70,7 +79,7 @@ pub const Component = struct {
                     dims.y - 5,
                     dims.width + 10,
                     dims.height + 10,
-                    self.theme_data.HIGHLIGHT,
+                    theme_data.HIGHLIGHT,
                 );
             }
             rl.drawRectangle(
@@ -78,7 +87,7 @@ pub const Component = struct {
                 dims.y,
                 dims.width,
                 dims.height,
-                self.theme_data.PRIMARY,
+                theme_data.PRIMARY,
             );
         }
     }

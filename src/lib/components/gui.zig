@@ -8,6 +8,7 @@ const tools = @import("tools.zig");
 const workspace = @import("../data/workspace.zig");
 const std = @import("std");
 const speed_control = @import("speed_control.zig");
+const theme_data = defaults.Theme;
 // const yaml_config = @import("../config/config.zig");
 
 pub const ComponentType = enum { Canvas, Menu, Timeline, Playback, Tools, SpeedControl };
@@ -118,7 +119,7 @@ pub const Root = struct {
         rl.initWindow(
             defaults.Window.base_config.width,
             defaults.Window.base_config.height,
-            "Insert Project Name Here",
+            "'Dick Joke' - Jon",
         );
         defer rl.closeWindow();
         rl.setTargetFPS(60);
@@ -138,7 +139,7 @@ pub const Root = struct {
     pub fn draw(self: *Self) void {
         rl.beginDrawing();
         defer rl.endDrawing();
-        rl.clearBackground(.light_gray);
+        rl.clearBackground(theme_data.BACKGROUND_SOLID);
         drawBackgroundGrid();
         for (self.components.items) |*component| {
             component.draw();
@@ -157,11 +158,11 @@ fn drawBackgroundGrid() void {
     var c: i32 = 0;
     while (c < width) : (c += grid_square_size) {
         const col_int = @as(i32, @intCast(c));
-        rl.drawLine(col_int, 0, col_int, height, rl.Color.dark_gray);
+        rl.drawLine(col_int, 0, col_int, height, theme_data.BACKGROUND_GRID_LINES);
     }
     var r: i32 = 0;
     while (r < height) : (r += grid_square_size) {
         const row_int = @as(i32, @intCast(r));
-        rl.drawLine(0, row_int, width, row_int, rl.Color.dark_gray);
+        rl.drawLine(0, row_int, width, row_int, theme_data.BACKGROUND_GRID_LINES);
     }
 }

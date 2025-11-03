@@ -20,29 +20,22 @@ pub const StickyAnchor = enum {
 };
 
 pub const Theme = struct {
-    PRIMARY: rl.Color,
-    SECONDARY: rl.Color,
-    ACCENT: rl.Color,
-    TEXT_PRIMARY: rl.Color,
-    TEXT_SECONDARY: rl.Color,
-    HIGHLIGHT: rl.Color,
-    HIGHLIGHT_SECONDARY: rl.Color,
-    HIGHLIGHT_UNSELECTED: rl.Color,
-    DISABLED: rl.Color,
+    // UI-specific
+    pub const PRIMARY = rl.Color.white;
+    pub const SECONDARY = rl.Color.orange;
+    pub const ACCENT = rl.Color.yellow;
+    pub const TEXT_PRIMARY = rl.Color.black;
+    pub const TEXT_SECONDARY = rl.Color.white;
+    pub const HIGHLIGHT = rl.Color.init(251, 96, 0, 255);
+    pub const HIGHLIGHT_SECONDARY = rl.Color.init(255, 200, 122, 255);
+    pub const HIGHLIGHT_SELECTED = rl.Color.init(249, 156, 80, 255);
+    pub const BACKGROUND_SOLID = rl.Color.init(190, 190, 190, 255);
+    pub const BACKGROUND_GRID_LINES = rl.Color.init(140, 140, 140, 255);
+    pub const DISABLED = rl.Color.gray;
 
-    pub fn init() Theme {
-        return .{
-            .PRIMARY = .white,
-            .SECONDARY = .orange,
-            .ACCENT = .yellow,
-            .TEXT_PRIMARY = .black,
-            .TEXT_SECONDARY = .white,
-            .HIGHLIGHT = rl.Color.fromInt(0xFB6100FF),
-            .HIGHLIGHT_SECONDARY = rl.Color.fromInt(0xFFC87AFF),
-            .HIGHLIGHT_UNSELECTED = rl.Color.fromInt(0xF99D50FF),
-            .DISABLED = rl.Color.gray,
-        };
-    }
+    // canvas-specific
+    pub const CANVAS_BLUE = rl.Color.init(48, 0, 251, 255);
+    pub const CANVAS_RED = rl.Color.init(251, 0, 48, 255);
 };
 
 pub const ScaleMode = enum {

@@ -11,7 +11,7 @@ pub const Component = struct {
     pub fn init() Component {
         return Component{
             .config = defaults.Playback.base_config,
-            .theme_data = defaults.Theme.init(),
+            .theme_data = defaults.Theme,
         };
     }
 
