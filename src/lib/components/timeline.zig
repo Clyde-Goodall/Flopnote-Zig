@@ -36,7 +36,7 @@ pub const Component = struct {
 
     pub fn init(allocator: std.mem.Allocator) Self {
         const cells = std.array_list.Managed(CellRect).init(allocator);
-        const self_root = Self{
+        return Self{
             .config = defaults.Timeline.base_config,
             .frames = null,
             .cells = cells,
@@ -45,8 +45,11 @@ pub const Component = struct {
             .mouse_in_region = false,
             .maximum_visible_cells = 0,
         };
-        self_root.calculateMaximumVisibleCells();
-        return self_root;
+    }
+
+    pub fn initBehaviors(self: *Self) !void {
+        try self.updateCells();
+        self.calculateMaximumVisibleCells();
     }
 
     pub fn deinit(self: *Self) void {
@@ -56,7 +59,8 @@ pub const Component = struct {
     pub fn calculateMaximumVisibleCells(self: *Self) void {
         const cell_dims = self.cells.items[0].config.configStructAsIntegers();
         const component_dims = self.config.configStructAsIntegers();
-        const max = @floor(component_dims.width / (cell_dims.width + cell_dims.padding_x));
+        const max = @divFloor(component_dims.width, (cell_dims.width + cell_dims.padding_x));
+        self.maximum_visible_cells = max;
     }
 
     pub fn setFrames(self: *Self, frames: *std.array_list.Managed(frame.Data)) void {
@@ -136,8 +140,8 @@ pub const Component = struct {
                     self.swapActiveFrameInFrameArray(i);
                 }
             }
-            if (scroll_movement != 0) {
-                cell.config.x += (scroll_movement / defaults.Window.base_config.width) * 800;
+            if (scroll_movement != 0 and self.cells.items.len > self.maximum_visible_cells - 3) {
+                cell.config.x += (scroll_movement / defaults.Window.WIDTH) * 800;
             }
         }
     }

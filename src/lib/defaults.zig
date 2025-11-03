@@ -19,6 +19,12 @@ pub const StickyAnchor = enum {
     None,
 };
 
+// All defaults to be used for building the UI and sizing, theming, etc.
+pub const Window = struct {
+    pub const WIDTH = 1000;
+    pub const HEIGHT = 600;
+};
+
 pub const Theme = struct {
     // UI-specific
     pub const PRIMARY = rl.Color.white;
@@ -127,32 +133,7 @@ pub const BaseConfig = struct {
     }
 };
 
-// All defaults to be used for building the UI and sizing, theming, etc.
-// kinda redundant having the baseconfig since this struct is
-// is really only for metadata concerning the window itself
-pub const Window = struct {
-    pub const WIDTH = 1000;
-    pub const HEIGHT = 600;
 
-    pub const base_config = BaseConfig{
-        .container_name = "Window",
-        .maintain_aspect = true,
-        .x = 0,
-        .y = 0,
-        .width = WIDTH,
-        .height = HEIGHT,
-        .max_width = WIDTH,
-        .max_height = HEIGHT,
-        .padding_x = 0,
-        .padding_y = 0,
-        .ratio = null,
-        .sticky = false,
-        .sticky_anchor = null,
-        .scale = false,
-        .resizeable = false,
-        .border_radius = 0,
-    };
-};
 
 pub const CanvasColors = enum(rl.Color) {
     Black = rl.Color.black,
@@ -162,15 +143,15 @@ pub const CanvasColors = enum(rl.Color) {
 };
 
 pub const Tools = struct {
-    const STARTING_FRAME_SPEED = 3;
+    pub const STARTING_FRAME_SPEED = 3;
     const X = 0;
     const Y = 0;
     const WIDTH = 20;
     const HEIGHT = 80;
     const MAX_WIDTH = WIDTH;
     const MAX_HEIGHT = HEIGHT;
-    const SELECTED_TOOL = tools.ToolType.Pencil;
-    const SELECTED_TOOL_SIZE = tools.ToolSize.Medium;
+    pub const SELECTED_TOOL = tools.ToolType.Pencil;
+    pub const SELECTED_TOOL_SIZE = tools.ToolSize.Medium;
 
     pub const base_config = BaseConfig{
         .container_name = "Tools",
@@ -277,12 +258,10 @@ pub const Playback = struct {
 };
 
 pub const SpeedControl = struct {
-    const PADDING_X = 1;
-    const PADDING_Y = 1.5;
     const HEIGHT = 5;
     const WIDTH = 20;
-    const X = Tools.base_config.x + Tools.base_config.width + PADDING_X;
-    const Y = Tools.base_config.y + Tools.base_config.height - HEIGHT - PADDING_Y;
+    const X = Tools.base_config.x + Tools.base_config.width + 1;
+    const Y = Tools.base_config.y + Tools.base_config.height - HEIGHT - 1.5;
 
     pub const base_config = BaseConfig{
         .container_name = "SpeedControl",
@@ -294,8 +273,8 @@ pub const SpeedControl = struct {
         .max_width = WIDTH,
         .max_height = HEIGHT,
         .ratio = null,
-        .padding_x = PADDING_X,
-        .padding_y = PADDING_Y,
+        .padding_x = 0,
+        .padding_y = 0,
         .sticky = true,
         .sticky_anchor = StickyAnchor.None,
         .scale = false,

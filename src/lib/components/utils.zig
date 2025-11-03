@@ -116,7 +116,7 @@ pub fn drawBorderedComponentRect(dims: defaults.IntegerScaledBaseConfig, _border
         adjusted_dims.x = adjusted_dims.x + dims.padding_x;
         adjusted_dims.y = adjusted_dims.y + dims.padding_y;
         adjusted_dims.width = adjusted_dims.width - (dims.padding_x * 2);
-        adjusted_dims.height = adjusted_dims.height - (dims.padding_x * 2);
+        adjusted_dims.height = adjusted_dims.height - (dims.padding_y * 2);
     }
     if (border_thickness > 0) {
         rl.drawRectangle(

@@ -105,7 +105,6 @@ pub const Root = struct {
         };
 
         try self_root.components.appendSlice(component_slice);
-
         return self_root;
     }
 
@@ -115,10 +114,14 @@ pub const Root = struct {
         self.components.items[3].component.Timeline.setFrames(&self.wkspace.active_project.?.frames);
     }
 
+    pub fn initComponentBehaviors(self: *Self) !void {
+        try self.components.items[3].component.Timeline.initBehaviors();
+    }
+
     pub fn start(self: *Self) void {
         rl.initWindow(
-            defaults.Window.base_config.width,
-            defaults.Window.base_config.height,
+            defaults.Window.WIDTH,
+            defaults.Window.HEIGHT,
             "'Dick Joke' - Jon",
         );
         defer rl.closeWindow();
@@ -153,8 +156,8 @@ pub const Root = struct {
 
 fn drawBackgroundGrid() void {
     const grid_square_size = 20;
-    const width = defaults.Window.base_config.width;
-    const height = defaults.Window.base_config.height;
+    const width = defaults.Window.WIDTH;
+    const height = defaults.Window.HEIGHT;
     var c: i32 = 0;
     while (c < width) : (c += grid_square_size) {
         const col_int = @as(i32, @intCast(c));
