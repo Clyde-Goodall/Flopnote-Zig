@@ -7,9 +7,11 @@ const menu = @import("menu.zig");
 const tools = @import("tools.zig");
 const workspace = @import("../data/workspace.zig");
 const std = @import("std");
+const speed_control = @import("speed_control.zig");
+const theme_data = defaults.Theme;
 // const yaml_config = @import("../config/config.zig");
 
-pub const ComponentType = enum { Canvas, Menu, Timeline, Playback, Tools };
+pub const ComponentType = enum { Canvas, Menu, Timeline, Playback, Tools, SpeedControl };
 
 pub const Container = struct {
     const Self = @This();
@@ -37,11 +39,16 @@ pub const TaggedContainer = struct {
         Timeline: timeline.Component,
         Playback: playback.Component,
         Tools: tools.Component,
+        SpeedControl: speed_control.Component,
     };
 
     pub fn draw(self: *TaggedContainer) void {
         switch (self.component) {
-            inline else => |*component| component.draw(),
+            inline else => |*component| {
+                component.draw() catch |err| {
+                    std.debug.print("\n{}", .{err});
+                };
+            },
         }
         if (self.child) |child| {
             child.draw();
@@ -73,40 +80,49 @@ pub const Root = struct {
         };
 
         const default_active_frame = &self_root.wkspace.active_project.?.frames.items[0];
-        const canvas_component = canvas.Component.init(defaults.Canvas.base_config, default_active_frame);
-        const timeline_component = timeline.Component.init(defaults.Timeline.base_config, allocator);
-        const tools_component = tools.Component.init(defaults.Tools.base_config);
+        const canvas_component = canvas.Component.init(default_active_frame);
+        const timeline_component = timeline.Component.init(allocator);
+        const tools_component = tools.Component.init(&self_root.wkspace);
+        const speed_control_component = speed_control.Component.init(&self_root.wkspace);
 
         const component_slice = &[_]TaggedContainer{
             TaggedContainer{
+                .component = .{ .Tools = tools_component },
+                .child = null,
+            },
+            TaggedContainer{
                 .component = .{ .Canvas = canvas_component },
+                .child = null,
+            },
+            TaggedContainer{
+                .component = .{ .SpeedControl = speed_control_component },
                 .child = null,
             },
             TaggedContainer{
                 .component = .{ .Timeline = timeline_component },
                 .child = null,
             },
-            TaggedContainer{
-                .component = .{ .Tools = tools_component },
-                .child = null,
-            },
         };
 
         try self_root.components.appendSlice(component_slice);
-
         return self_root;
     }
 
     pub fn initPointers(self: *Self) void {
-        // Set all pointers AFTER the struct is in its final memory location
-        self.components.items[1].component.Timeline.setFrames(&self.wkspace.active_project.?.frames);
+        self.components.items[0].component.Tools.wkspace = &self.wkspace;
+        self.components.items[2].component.SpeedControl.wkspace = &self.wkspace;
+        self.components.items[3].component.Timeline.setFrames(&self.wkspace.active_project.?.frames);
+    }
+
+    pub fn initComponentBehaviors(self: *Self) !void {
+        try self.components.items[3].component.Timeline.initBehaviors();
     }
 
     pub fn start(self: *Self) void {
         rl.initWindow(
-            defaults.Window.base_config.width,
-            defaults.Window.base_config.height,
-            "Insert Project Name Here",
+            defaults.Window.WIDTH,
+            defaults.Window.HEIGHT,
+            "'Dick Joke' - Jon",
         );
         defer rl.closeWindow();
         rl.setTargetFPS(60);
@@ -124,16 +140,10 @@ pub const Root = struct {
     }
 
     pub fn draw(self: *Self) void {
-        rl.clearBackground(.black);
-        rl.drawRectangle(
-            0,
-            0,
-            defaults.Window.base_config.width,
-            defaults.Window.base_config.width,
-            .gray,
-        );
         rl.beginDrawing();
         defer rl.endDrawing();
+        rl.clearBackground(theme_data.BACKGROUND_SOLID);
+        drawBackgroundGrid();
         for (self.components.items) |*component| {
             component.draw();
         }
@@ -143,3 +153,19 @@ pub const Root = struct {
         defer self.components.deinit();
     }
 };
+
+fn drawBackgroundGrid() void {
+    const grid_square_size = 20;
+    const width = defaults.Window.WIDTH;
+    const height = defaults.Window.HEIGHT;
+    var c: i32 = 0;
+    while (c < width) : (c += grid_square_size) {
+        const col_int = @as(i32, @intCast(c));
+        rl.drawLine(col_int, 0, col_int, height, theme_data.BACKGROUND_GRID_LINES);
+    }
+    var r: i32 = 0;
+    while (r < height) : (r += grid_square_size) {
+        const row_int = @as(i32, @intCast(r));
+        rl.drawLine(0, row_int, width, row_int, theme_data.BACKGROUND_GRID_LINES);
+    }
+}

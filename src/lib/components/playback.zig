@@ -8,16 +8,18 @@ pub const Component = struct {
     open_frame: ?*frame.Data,
     config: defaults.BaseConfig,
 
-    pub fn init(_: *Self, base_config: defaults.BaseConfig) Component {
+    pub fn init() Component {
         return Component{
-            .config = base_config.config,
+            .config = defaults.Playback.base_config,
+            .theme_data = defaults.Theme,
         };
     }
 
-    pub fn draw(self: *Self) void {
+    pub fn draw(self: *Self) !void {
         const scaled_dimensions = self.config.configStructAsIntegers();
-        rl.drawRectangle(scaled_dimensions.x, scaled_dimensions.y, scaled_dimensions.width, scaled_dimensions.height, .white);    }
-    
+        rl.drawRectangle(scaled_dimensions.x, scaled_dimensions.y, scaled_dimensions.width, scaled_dimensions.height, .white);
+    }
+
     pub fn update(_: *Self) void {
         return;
     }

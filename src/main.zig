@@ -10,6 +10,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     var app = try gui.Root.init(allocator);
     defer app.deinit();
-    app.initPointers(); // Set pointers after app is in final location
+    app.initPointers();
+    _ = try app.initComponentBehaviors();
     app.start();
 }

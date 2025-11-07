@@ -16,14 +16,32 @@ pub const StickyAnchor = enum {
     BottomRight,
     BottomCenter,
     Center,
+    None,
+};
+
+// All defaults to be used for building the UI and sizing, theming, etc.
+pub const Window = struct {
+    pub const WIDTH = 1000;
+    pub const HEIGHT = 600;
 };
 
 pub const Theme = struct {
-    const THEME_PRIMARY = .white;
-    const THEME_SECONDARY = .orange;
-    const THEME_ACCENT = .yellow;
-    const THEME_TEXT_PRIMARY = .black;
-    const THEME_TEXT_SECONDARY = .white;
+    // UI-specific
+    pub const PRIMARY = rl.Color.white;
+    pub const SECONDARY = rl.Color.orange;
+    pub const ACCENT = rl.Color.yellow;
+    pub const TEXT_PRIMARY = rl.Color.black;
+    pub const TEXT_SECONDARY = rl.Color.white;
+    pub const HIGHLIGHT = rl.Color.init(251, 96, 0, 255);
+    pub const HIGHLIGHT_SECONDARY = rl.Color.init(255, 200, 122, 255);
+    pub const HIGHLIGHT_SELECTED = rl.Color.init(249, 156, 80, 255);
+    pub const BACKGROUND_SOLID = rl.Color.init(190, 190, 190, 255);
+    pub const BACKGROUND_GRID_LINES = rl.Color.init(140, 140, 140, 255);
+    pub const DISABLED = rl.Color.gray;
+
+    // canvas-specific
+    pub const CANVAS_BLUE = rl.Color.init(48, 0, 251, 255);
+    pub const CANVAS_RED = rl.Color.init(251, 0, 48, 255);
 };
 
 pub const ScaleMode = enum {
@@ -50,6 +68,7 @@ pub const BaseConfig = struct {
     const Self = @This();
 
     container_name: []const u8,
+    maintain_aspect: ?bool,
     x: f32, // Should be an integer beteen 0-100, 1 being 1%, 50 being 50%, etc
     y: f32,
     width: f32,
@@ -96,42 +115,25 @@ pub const BaseConfig = struct {
     }
 
     fn multiplyProportionByActualSize(
-        _: *const Self,
+        self: *const Self,
         coord_pair: rl.Vector2,
     ) rl.Vector2 {
-        const pixels_per_percent = Window.HEIGHT / 100.0;
-        return rl.Vector2{
-            .x = pixels_per_percent * coord_pair.x,
-            .y = pixels_per_percent * coord_pair.y,
-        };
+        // const pixels_per_percent = Window.HEIGHT / 100.0;
+        if (self.maintain_aspect orelse false) {
+            return rl.Vector2{
+                .x = Window.HEIGHT * coord_pair.x / 100,
+                .y = Window.HEIGHT * coord_pair.y / 100,
+            };
+        } else {
+            return rl.Vector2{
+                .x = Window.WIDTH * coord_pair.x / 100,
+                .y = Window.HEIGHT * coord_pair.y / 100,
+            };
+        }
     }
 };
 
-// All defaults to be used for building the UI and sizing, theming, etc.
-// kinda redundant having the baseconfig since this struct is
-// is really only for metadata concerning the window itself
-pub const Window = struct {
-    const WIDTH = 1000;
-    const HEIGHT = 800;
 
-    pub const base_config = BaseConfig{
-        .container_name = "Window",
-        .x = 0,
-        .y = 0,
-        .width = 1000,
-        .height = 800,
-        .max_width = WIDTH,
-        .max_height = HEIGHT,
-        .padding_x = 0,
-        .padding_y = 0,
-        .ratio = null,
-        .sticky = false,
-        .sticky_anchor = null,
-        .scale = false,
-        .resizeable = false,
-        .border_radius = 0,
-    };
-};
 
 pub const CanvasColors = enum(rl.Color) {
     Black = rl.Color.black,
@@ -141,26 +143,27 @@ pub const CanvasColors = enum(rl.Color) {
 };
 
 pub const Tools = struct {
-    const STARTING_FRAME_SPEED = 10;
+    pub const STARTING_FRAME_SPEED = 3;
     const X = 0;
     const Y = 0;
     const WIDTH = 20;
-    const HEIGHT = 65;
+    const HEIGHT = 80;
     const MAX_WIDTH = WIDTH;
     const MAX_HEIGHT = HEIGHT;
-    const SELECTED_TOOL = tools.ToolType.Pencil;
-    const SELECTED_TOOL_SIZE = tools.ToolSize.Medium;
+    pub const SELECTED_TOOL = tools.ToolType.Pencil;
+    pub const SELECTED_TOOL_SIZE = tools.ToolSize.Medium;
 
     pub const base_config = BaseConfig{
         .container_name = "Tools",
+        .maintain_aspect = false,
         .x = X,
         .y = Y,
         .width = WIDTH,
         .height = HEIGHT,
         .max_width = MAX_WIDTH,
         .max_height = MAX_HEIGHT,
-        .padding_x = 2,
-        .padding_y = 2,
+        .padding_x = 1,
+        .padding_y = 1.5,
         .ratio = null,
         .sticky = false,
         .scale = false,
@@ -174,18 +177,19 @@ pub const Canvas = struct {
     const X = Tools.X + Tools.WIDTH;
     const Y = 0;
     const WIDTH = 80;
-    const HEIGHT = 65;
+    const HEIGHT = 80;
     const MAX_WIDTH = WIDTH;
     const MAX_HEIGHT = HEIGHT;
-    pub const TARGET_PIXEL_WIDTH: i32 = 380;
-    pub const TARGET_PIXEL_HEIGHT: i32 = 252;
+    pub const TARGET_PIXEL_WIDTH: i32 = 190;
+    pub const TARGET_PIXEL_HEIGHT: i32 = 126;
     // technically, those dimensions are scaled to 2x,
     // so the actual tools are 2x2px rather than 1x1.
     pub const GRID_POINT_SIZE = 2;
-    pub const SCALE_MULTIPLIER = 1;
+    pub const SCALE_MULTIPLIER = 3;
 
     pub const base_config = BaseConfig{
         .container_name = "Canvas",
+        .maintain_aspect = false,
         .x = X,
         .y = Y,
         .width = WIDTH,
@@ -213,6 +217,7 @@ pub const Collaborators = struct {
 
     pub const base_config = BaseConfig{
         .container_name = "Collaborators",
+        .maintain_aspect = false,
         .x = X,
         .y = Y,
         .width = WIDTH,
@@ -238,6 +243,7 @@ pub const Playback = struct {
 
     pub const base_config = BaseConfig{
         .container_name = "Playback",
+        .maintain_aspect = false,
         .x = X,
         .y = Y,
         .width = WIDTH,
@@ -251,17 +257,44 @@ pub const Playback = struct {
     };
 };
 
+pub const SpeedControl = struct {
+    const HEIGHT = 5;
+    const WIDTH = 20;
+    const X = Tools.base_config.x + Tools.base_config.width + 1;
+    const Y = Tools.base_config.y + Tools.base_config.height - HEIGHT - 1.5;
+
+    pub const base_config = BaseConfig{
+        .container_name = "SpeedControl",
+        .maintain_aspect = false,
+        .x = X,
+        .y = Y,
+        .width = WIDTH,
+        .height = HEIGHT,
+        .max_width = WIDTH,
+        .max_height = HEIGHT,
+        .ratio = null,
+        .padding_x = 0,
+        .padding_y = 0,
+        .sticky = true,
+        .sticky_anchor = StickyAnchor.None,
+        .scale = false,
+        .resizeable = true,
+        .border_radius = 0,
+    };
+};
+
 pub const Timeline = struct {
     const X = 0;
     const Y = if ((Tools.Y + Tools.HEIGHT) >= (Canvas.Y + Canvas.HEIGHT))
-        Tools.Y + Tools.HEIGHT + 20
+        Tools.Y + Tools.HEIGHT
     else
-        Canvas.Y + Canvas.HEIGHT + 20;
+        Canvas.Y + Canvas.HEIGHT;
     const WIDTH = 100;
     const HEIGHT = 100 - Y;
 
     pub const base_config = BaseConfig{
         .container_name = "Playback",
+        .maintain_aspect = true,
         .x = X,
         .y = Y,
         .width = WIDTH,

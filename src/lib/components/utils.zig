@@ -74,15 +74,58 @@ pub fn aspectRatioScaledDimensions(base_rect: rl.Rectangle, target_ratio: f32) r
     };
 }
 
+pub fn isMouseInRegion(region: *const defaults.IntegerScaledBaseConfig, full_width: ?bool, full_height: ?bool) bool {
+    const is_full_width = full_width orelse false;
+    const is_full_height = full_height orelse false;
 
-pub fn isMouseInRegion(region: *utils.IntegerRect) bool {
+    const width = if (is_full_width)
+        rl.getScreenWidth()
+    else
+        region.x + region.width;
+
+    const height = if (is_full_height)
+        rl.getScreenHeight()
+    else
+        region.y + region.width;
+
     const mouse = rl.getMousePosition();
-    if (mouse.x >= region.x and
-        mouse.x <= rl.getScreenWidth() and
-        mouse.y >= region.y and
-        mouse.y <= region.y + region.height)
+    const mx = @as(i32, @intFromFloat(mouse.x));
+    const my = @as(i32, @intFromFloat(mouse.y));
+
+    if (mx >= region.x and
+        mx <= width and
+        my >= region.y and
+        my <= height)
     {
         return true;
-    } 
+    }
     return false;
+}
+
+pub fn drawBorderedComponentRect(dims: defaults.IntegerScaledBaseConfig, _border_color: ?rl.Color, background: rl.Color, _border_thickness: ?i8, _padding_used: ?bool) void {
+    const padding_used = _padding_used orelse false;
+    const border_thickness = _border_thickness orelse 0;
+    const border_color = _border_color orelse rl.Color.black;
+    var adjusted_dims = IntegerRect{
+        .x = dims.x,
+        .y = dims.y,
+        .width = dims.width,
+        .height = dims.height,
+    };
+    if (padding_used) {
+        adjusted_dims.x = adjusted_dims.x + dims.padding_x;
+        adjusted_dims.y = adjusted_dims.y + dims.padding_y;
+        adjusted_dims.width = adjusted_dims.width - (dims.padding_x * 2);
+        adjusted_dims.height = adjusted_dims.height - (dims.padding_y * 2);
+    }
+    if (border_thickness > 0) {
+        rl.drawRectangle(
+            adjusted_dims.x - border_thickness,
+            adjusted_dims.y - border_thickness,
+            adjusted_dims.width + (border_thickness * 2),
+            adjusted_dims.height + (border_thickness * 2),
+            border_color,
+        );
+    }
+    rl.drawRectangle(adjusted_dims.x, adjusted_dims.y, adjusted_dims.width, adjusted_dims.height, background);
 }

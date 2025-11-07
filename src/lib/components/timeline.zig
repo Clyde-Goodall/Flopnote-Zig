@@ -3,6 +3,7 @@ const frame = @import("../data/frame.zig");
 const rl = @import("raylib");
 const defaults = @import("../defaults.zig");
 const utils = @import("utils.zig");
+const theme_data = defaults.Theme;
 
 const CellRect = struct {
     const Self = @This();
@@ -18,23 +19,48 @@ const CellRect = struct {
     }
 };
 
+pub const TimelineView = enum {
+    Cells,
+    Layers,
+};
+
 pub const Component = struct {
     const Self = @This();
     frames: ?*std.array_list.Managed(frame.Data),
     cells: std.array_list.Managed(CellRect),
-    active: i32,
+    prev_active: usize,
+    current_active: usize,
     config: defaults.BaseConfig,
     mouse_in_region: bool,
+    maximum_visible_cells: i32,
 
-    pub fn init(config: defaults.BaseConfig, allocator: std.mem.Allocator) Self {
+    pub fn init(allocator: std.mem.Allocator) Self {
         const cells = std.array_list.Managed(CellRect).init(allocator);
         return Self{
-            .config = config,
+            .config = defaults.Timeline.base_config,
             .frames = null,
             .cells = cells,
-            .active = 0,
+            .current_active = 0,
+            .prev_active = 0,
             .mouse_in_region = false,
+            .maximum_visible_cells = 0,
         };
+    }
+
+    pub fn initBehaviors(self: *Self) !void {
+        try self.updateCells();
+        self.calculateMaximumVisibleCells();
+    }
+
+    pub fn deinit(self: *Self) void {
+        self.cells.deinit();
+    }
+
+    pub fn calculateMaximumVisibleCells(self: *Self) void {
+        const cell_dims = self.cells.items[0].config.configStructAsIntegers();
+        const component_dims = self.config.configStructAsIntegers();
+        const max = @divFloor(component_dims.width, (cell_dims.width + cell_dims.padding_x));
+        self.maximum_visible_cells = max;
     }
 
     pub fn setFrames(self: *Self, frames: *std.array_list.Managed(frame.Data)) void {
@@ -42,35 +68,35 @@ pub const Component = struct {
     }
 
     fn drawCells(self: *Self) void {
-        // const timeline_cfg = defaults.Timeline.base_config;
         var i: usize = 0;
         while (i < self.cells.items.len) : (i += 1) {
             const cell = self.cells.items[i];
-            const dims = cell.config.configStructAsIntegers();
+            var dims = cell.config.configStructAsIntegers();
+            dims.x = dims.x + dims.padding_x;
             const timeline_dims = self.config.configStructAsIntegers();
             const screen_edge_limit = rl.getScreenWidth() + timeline_dims.x;
             if (dims.x + dims.padding_x > screen_edge_limit) break;
             // if (cell.x + cell.width  - CELL_PADDING < WINDOW_WIDTH) continue;
-            if (self.active == i) {
+            if (self.current_active == i) {
                 rl.drawRectangle(
-                    dims.x + dims.padding_x - 5,
-                    dims.y + dims.padding_y - 5,
-                    dims.width - (dims.padding_x * 2) + 10,
-                    dims.height - (dims.padding_y * 2) + 10,
-                    .red,
+                    dims.x - 5,
+                    dims.y - 5,
+                    dims.width + 10,
+                    dims.height + 10,
+                    theme_data.HIGHLIGHT,
                 );
             }
             rl.drawRectangle(
-                dims.x + dims.padding_x,
-                dims.y + dims.padding_y,
-                dims.width - (dims.padding_x * 2),
-                dims.height - (dims.padding_y * 2),
-                .white,
+                dims.x,
+                dims.y,
+                dims.width,
+                dims.height,
+                theme_data.PRIMARY,
             );
         }
     }
 
-    pub fn draw(self: *Self) void {
+    pub fn draw(self: *Self) !void {
         if (self.cells.items.len == 0) return;
         const scaled_dimensions = self.config.configStructAsIntegers();
         // kinda janky config overrides since I need full-width
@@ -86,17 +112,15 @@ pub const Component = struct {
 
     pub fn update(self: *Self) !void {
         if (self.frames == null) return;
-        self.updateMouseInRegion();
+        try self.updateMouseInRegion();
         self.updateCells() catch unreachable;
     }
 
     pub fn updateMouseInRegion(self: *Self) !void {
-        self.mouse_in_region = utils.isMouseInRegion(self.config.configStructAsIntegers());
+        self.mouse_in_region = utils.isMouseInRegion(&self.config.configStructAsIntegers(), true, null);
     }
 
     fn updateCells(self: *Self) !void {
-        const scroll_movement = rl.getMouseWheelMove();
-
         const frames = self.frames orelse return;
 
         // Ensure cells match frames count
@@ -104,37 +128,30 @@ pub const Component = struct {
             try self.cells.append(CellRect.init(buildCellConfig(self.cells.items.len)));
         }
 
+        if (!self.mouse_in_region) return;
+        const scroll_movement = rl.getMouseWheelMove();
         var i: usize = 0;
         while (i < self.cells.items.len) : (i += 1) {
             var cell = &self.cells.items[i];
-            if (scroll_movement != 0) {
-                cell.config.x += (scroll_movement / defaults.Window.base_config.width) * 800;
-                // Only update aspect dimensions when config changes
+            const is_hovered = utils.isMouseInRegion(&cell.config.configStructAsIntegers(), null, null);
+            if (is_hovered) {
+                const mouse_clicked = rl.isMouseButtonPressed(rl.MouseButton.left);
+                if (mouse_clicked) {
+                    self.swapActiveFrameInFrameArray(i);
+                }
             }
-            self.updateActiveCell(cell.*, &i);
+            if (scroll_movement != 0 and self.cells.items.len > self.maximum_visible_cells - 3) {
+                cell.config.x += (scroll_movement / defaults.Window.WIDTH) * 800;
+            }
         }
     }
-
-    fn updateActiveCell(self: *Self, cell: CellRect, idx: *const usize) void {
-        const mouse_pos = rl.getMousePosition();
-        const mouse_clicked = rl.isMouseButtonPressed(rl.MouseButton.left);
-        const x = @as(i32, @intFromFloat(mouse_pos.x));
-        const y = @as(i32, @intFromFloat(mouse_pos.y));
-        const scaled = cell.config.configStructAsIntegers();
-        if (x >= scaled.x + scaled.padding_x and
-            x <= scaled.x + scaled.width - scaled.padding_x and
-            y >= scaled.y + scaled.padding_y and
-            y <= scaled.y + scaled.height - scaled.padding_y)
-        {
-            rl.setMouseCursor(rl.MouseCursor.pointing_hand);
-            if (mouse_clicked) {
-                self.active = @as(i32, @intCast(idx.*));
-            }
-        } else {
-            rl.setMouseCursor(rl.MouseCursor.arrow);
-        }
+    pub fn swapActiveFrameInFrameArray(self: *Self, idx: usize) void {
+        self.prev_active = self.current_active;
+        self.current_active = idx;
+        self.frames.?.*.items[self.prev_active].active = false; // lol
+        self.frames.?.*.items[self.current_active].active = true;
+        std.debug.print("\nSet {} as active frame\n", .{idx});
     }
-
     pub fn addNewFrameAndCell(self: *Self) void {
         self.frames.append(frame.Data.init());
         self.cells.append(CellRect.init());
@@ -154,19 +171,19 @@ fn buildCellConfig(idx: usize) defaults.BaseConfig {
     const timeline_cfg = defaults.Timeline.base_config;
     const canvas_cfg = defaults.Canvas.base_config;
     const available_height_pct = timeline_cfg.height;
-    const target_padding_y_pct: f32 = 2;
+    const target_padding_y_pct: f32 = 4;
     const target_padding_x_pct: f32 = 2;
 
     const target_height_pct = available_height_pct - (target_padding_y_pct * 2);
     const target_y_pct = timeline_cfg.y + target_padding_y_pct;
     const canvas_ratio = canvas_cfg.ratio orelse 1;
     const target_width_pct = target_height_pct / canvas_ratio;
-    // std.debug.print("target_height_pct: {}, canvas_ratio: {}, target_width_pct: {}\n", .{ target_height_pct, canvas_ratio, target_width_pct });
     const target_x_pct_unclamped = (target_width_pct + target_padding_x_pct) * @as(f32, @floatFromInt(idx)) + target_padding_x_pct;
     const target_x_pct = @min(target_x_pct_unclamped, 2000000.0);
 
     return defaults.BaseConfig{
         .container_name = "CellRect",
+        .maintain_aspect = true,
         .x = target_x_pct,
         .y = target_y_pct,
         .width = target_width_pct,
